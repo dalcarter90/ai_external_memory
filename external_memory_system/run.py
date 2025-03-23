@@ -20,6 +20,34 @@ from external_memory_system.memory import HybridMemory
 from external_memory_system.models import ChatGPTModel, GeminiModel
 from external_memory_system.agents import MemoryAgent
 
+from external_memory_system.memory.pinecone_store import PineconeVectorStore
+from external_memory_system.models.ollama_pinecone_integration import PineconeOllamaIntegration
+
+def main():
+    # Initialize Pinecone store
+    pinecone_store = PineconeVectorStore(
+        index_name=os.getenv("PINECONE_INDEX_NAME"),
+        namespace="accounting"
+    )
+    
+    # Create integration with local LLM
+    integration = PineconeOllamaIntegration(pinecone_store)
+    
+    # Example: Add accounting knowledge to memory
+    integration.add_to_memory(
+        "The accounting equation is Assets = Liabilities + Equity. This fundamental equation forms the basis of double-entry bookkeeping.",
+        metadata={"category": "accounting_principles", "importance": 0.9}
+    )
+    
+    # Example: Query memory and generate response
+    query = "Explain the accounting equation"
+    response = integration.generate_with_context(query)
+    print(f"Query: {query}")
+    print(f"Response: {response}")
+
+if __name__ == "__main__":
+    main()
+
 def setup_environment(use_pinecone=False, pinecone_api_key=None, pinecone_environment=None):
     """Set up the environment with models and memory."""
     logger.info("Setting up environment")

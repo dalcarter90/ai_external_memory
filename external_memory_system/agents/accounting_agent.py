@@ -3,6 +3,33 @@
 from typing import List, Dict, Any, Optional
 from ..models.local_llm import LocalLLM
 from ..memory.vector_store import PineconeVectorStore
+from external_memory_system.memory.pinecone_store import PineconeVectorStore
+from external_memory_system.models.ollama_pinecone_integration import PineconeOllamaIntegration
+
+def main():
+    # Initialize Pinecone store
+    pinecone_store = PineconeVectorStore(
+        index_name=os.getenv("PINECONE_INDEX_NAME"),
+        namespace="accounting"
+    )
+    
+    # Create integration with local LLM
+    integration = PineconeOllamaIntegration(pinecone_store)
+    
+    # Example: Add accounting knowledge to memory
+    integration.add_to_memory(
+        "The accounting equation is Assets = Liabilities + Equity. This fundamental equation forms the basis of double-entry bookkeeping.",
+        metadata={"category": "accounting_principles", "importance": 0.9}
+    )
+    
+    # Example: Query memory and generate response
+    query = "Explain the accounting equation"
+    response = integration.generate_with_context(query)
+    print(f"Query: {query}")
+    print(f"Response: {response}")
+
+if __name__ == "__main__":
+    main()
 
 class AccountingAgent:
     """Agent for handling accounting-related tasks."""

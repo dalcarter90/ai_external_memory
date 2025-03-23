@@ -1,4 +1,4 @@
-
+# This script loads environment variables from a .env file using the python-dotenv package.
 from dotenv import load_dotenv
 import os
 
