@@ -1,7 +1,11 @@
 """Basic accounting agent using local LLM and Pinecone."""
+import sys
+import os
+# Add the project root to the Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from typing import List, Dict, Any, Optional
-from ..models.local_llm import LocalLLM
+from external_memory_system.models.local_llm import LocalLLM
 from ..memory.vector_store import PineconeVectorStore
 from external_memory_system.memory.pinecone_store import PineconeVectorStore
 from external_memory_system.models.ollama_pinecone_integration import PineconeOllamaIntegration
