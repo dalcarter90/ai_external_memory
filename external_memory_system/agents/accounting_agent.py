@@ -1,179 +1,111 @@
-"""Basic accounting agent using local LLM and Pinecone."""
-import sys
+"""
+Implementation of the accounting agent using local LLM and Pinecone vector storage.
+"""
+
 import os
-# Add the project root to the Python path
+import sys
+from dotenv import load_dotenv
+
+# Add the project root to the Python path to fix import issues
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from typing import List, Dict, Any, Optional
-from external_memory_system.models.local_llm import LocalLLM
-from ..memory.vector_store import PineconeVectorStore
+# Use absolute imports
 from external_memory_system.memory.pinecone_store import PineconeVectorStore
 from external_memory_system.models.ollama_pinecone_integration import PineconeOllamaIntegration
 
+# Load environment variables
+load_dotenv()
+
 def main():
-    # Initialize Pinecone store
-    pinecone_store = PineconeVectorStore(
-        index_name=os.getenv("PINECONE_INDEX_NAME"),
-        namespace="accounting"
-    )
+    """Main function to run the accounting agent."""
+    print("Initializing Accounting Agent...")
     
-    # Create integration with local LLM
-    integration = PineconeOllamaIntegration(pinecone_store)
+    # Initialize Pinecone store with custom implementation for abstract methods
+    class CompletePineconeVectorStore(PineconeVectorStore):
+        """Extended PineconeVectorStore with implementation of abstract methods."""
+        
+        def clear(self) -> bool:
+            """Clear all items from memory."""
+            try:
+                # Delete all vectors in the namespace
+                self.index.delete(delete_all=True, namespace=self.namespace)
+                # Clear local cache
+                self.items = {}
+                return True
+            except Exception as e:
+                print(f"Error clearing Pinecone store: {e}")
+                return False
+        
+        def get_related(self, item_id: str, limit: int = 10):
+            """Get items related to a specific item."""
+            item = self.get(item_id)
+            if not item or not item.embedding:
+                return []
+            
+            # Use the item's embedding to find similar items
+            results = self.index.query(
+                vector=item.embedding,
+                top_k=limit + 1,  # +1 because the item itself will be included
+                namespace=self.namespace,
+                include_metadata=True,
+                include_values=True
+            )
+            
+            # Convert results to memory items, excluding the query item
+            items = []
+            for match in results.matches:
+                if match.id != item_id:  # Skip the original item
+                    match_item = self.get(match.id)
+                    if match_item:
+                        items.append((match_item, match.score))
+            
+            return items
+        
+        def list(self, limit: int = 100):
+            """List items in memory."""
+            # This is a simplified implementation
+            # In a real implementation, you would fetch items from Pinecone
+            return list(self.items.values())[:limit]
     
-    # Example: Add accounting knowledge to memory
-    integration.add_to_memory(
-        "The accounting equation is Assets = Liabilities + Equity. This fundamental equation forms the basis of double-entry bookkeeping.",
-        metadata={"category": "accounting_principles", "importance": 0.9}
-    )
-    
-    # Example: Query memory and generate response
-    query = "Explain the accounting equation"
-    response = integration.generate_with_context(query)
-    print(f"Query: {query}")
-    print(f"Response: {response}")
+    try:
+        # Initialize the complete Pinecone store
+        pinecone_store = CompletePineconeVectorStore(
+            index_name=os.getenv("PINECONE_INDEX_NAME"),
+            namespace="accounting"
+        )
+        
+        print("Pinecone store initialized successfully.")
+        
+        # Create integration with local LLM
+        integration = PineconeOllamaIntegration(pinecone_store)
+        print("Local LLM integration initialized successfully.")
+        
+        # Example: Add accounting knowledge to memory
+        print("Adding accounting knowledge to memory...")
+        item_id = integration.add_to_memory(
+            "The accounting equation is Assets = Liabilities + Equity. This fundamental equation forms the basis of double-entry bookkeeping.",
+            metadata={"category": "accounting_principles", "importance": 0.9}
+        )
+        
+        if item_id:
+            print(f"Successfully added item with ID: {item_id}")
+        else:
+            print("Failed to add item to memory.")
+        
+        # Example: Query memory and generate response
+        print("\nTesting query and response generation...")
+        query = "Explain the accounting equation"
+        print(f"Query: {query}")
+        
+        response = integration.generate_with_context(query)
+        print(f"Response: {response}")
+        
+        print("\nAccounting Agent test completed successfully.")
+        
+    except Exception as e:
+        print(f"Error initializing accounting agent: {e}")
+        import traceback
+        traceback.print_exc()
 
 if __name__ == "__main__":
     main()
-
-class AccountingAgent:
-    """Agent for handling accounting-related tasks."""
-    
-    def __init__(
-        self,
-        name: str = "AccountingAssistant",
-        model: str = "mistral:7b-instruct-q4_0"
-    ):
-        """Initialize the accounting agent.
-        
-        Args:
-            name: Name of the agent
-            model: Name of the LLM model to use
-        """
-        self.name = name
-        self.llm = LocalLLM(model=model)
-        self.memory = PineconeVectorStore(namespace=f"agent_{name.lower()}")
-        self.conversation_history = []
-    
-    def add_to_memory(self, content: str, metadata: Optional[Dict[str, Any]] = None) -> str:
-        """Add information to the agent's memory.
-        
-        Args:
-            content: Text content to remember
-            metadata: Additional metadata
-            
-        Returns:
-            ID of the memory item
-        """
-        if metadata is None:
-            metadata = {}
-        
-        metadata["agent"] = self.name
-        metadata["type"] = "knowledge"
-        
-        return self.memory.add_item(content, metadata)
-    
-    def search_memory(self, query: str, top_k: int = 3) -> List[Dict[str, Any]]:
-        """Search the agent's memory.
-        
-        Args:
-            query: Search query
-            top_k: Number of results to return
-            
-        Returns:
-            List of matching memory items
-        """
-        return self.memory.search(
-            query=query,
-            top_k=top_k,
-            filter={"agent": self.name}
-        )
-    
-    def process_query(self, query: str) -> str:
-        """Process a user query with memory augmentation.
-        
-        Args:
-            query: User's query text
-            
-        Returns:
-            Agent's response
-        """
-        # Search for relevant information in memory
-        relevant_info = self.search_memory(query)
-        
-        # Construct context from relevant information
-        context = ""
-        if relevant_info:
-            context = "Relevant information from memory:\n"
-            for i, info in enumerate(relevant_info, 1):
-                context += f"{i}. {info['content']}\n"
-        
-        # Construct prompt with context
-        prompt = f"""You are {self.name}, an AI accounting assistant.
-        
-{context}
-
-User query: {query}
-
-Please provide a helpful response based on your accounting knowledge and the information provided.
-"""
-        
-        # Generate response using LLM
-        response = self.llm.generate(prompt)
-        
-        # Update conversation history
-        self.conversation_history.append({
-            "role": "user",
-            "content": query
-        })
-        self.conversation_history.append({
-            "role": "assistant",
-            "content": response
-        })
-        
-        return response
-    
-    def chat(self, message: str) -> str:
-        """Chat with the agent using conversation history.
-        
-        Args:
-            message: User's message
-            
-        Returns:
-            Agent's response
-        """
-        # Search for relevant information in memory
-        relevant_info = self.search_memory(message)
-        
-        # Construct system message with context
-        system_message = f"You are {self.name}, an AI accounting assistant."
-        if relevant_info:
-            system_message += "\n\nRelevant information from memory:\n"
-            for i, info in enumerate(relevant_info, 1):
-                system_message += f"{i}. {info['content']}\n"
-        
-        # Prepare messages for chat
-        messages = [
-            {"role": "system", "content": system_message}
-        ]
-        
-        # Add conversation history (limited to last 10 exchanges)
-        for item in self.conversation_history[-10:]:
-            messages.append(item)
-        
-        # Add user's current message
-        messages.append({"role": "user", "content": message})
-        
-        # Generate response using LLM
-        response = self.llm.chat(messages)
-        
-        # Update conversation history
-        self.conversation_history.append({
-            "role": "user",
-            "content": message
-        })
-        self.conversation_history.append({
-            "role": "assistant",
-            "content": response
-        })
-        
-        return response
