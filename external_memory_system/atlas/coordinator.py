@@ -40,10 +40,15 @@ class Atlas:
         # Use the same initialization as in your existing code
         return LocalLLM()
     
-    def _initialize_vector_store(self) -> PineconeVectorStore:
+    def _initialize_vector_store(self):
         """Initialize the vector store."""
-        # Use the same initialization as in your existing code
-        return PineconeVectorStore(namespace="atlas")
+        try:
+            # First try to import and use MockVectorStore for testing
+            from external_memory_system.storage.mock_vector_store import MockVectorStore
+            return MockVectorStore(namespace="atlas")
+        except ImportError:
+            # Fall back to PineconeVectorStore for production
+            return PineconeVectorStore(namespace="atlas")
     
     def _setup_logger(self):
         """Set up enhanced logging for communication monitoring."""

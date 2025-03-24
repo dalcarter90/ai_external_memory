@@ -1,9 +1,8 @@
+# external_memory_system/agents/__init__.py
 """
-Initialization file for agent package.
+Specialized accounting agents for the AI accounting system.
 """
 
-from .memory_agent import MemoryAgent
+from external_memory_system.agents.bookkeeping_agent import BookkeepingAgent
 
-__all__ = [
-    'MemoryAgent'
-]
+__all__ = ['BookkeepingAgent']

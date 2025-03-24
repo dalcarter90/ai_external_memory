@@ -16,7 +16,7 @@ from .key_value_store import InMemoryKeyValueStore
 from .graph_store import InMemoryGraphStore
 
 try:
-    from .pinecone_store import PineconeVectorStore
+    from ..storage.pinecone_store import PineconeVectorStore
 except ImportError:
     # Define a placeholder if Pinecone is not installed
     PineconeVectorStore = None

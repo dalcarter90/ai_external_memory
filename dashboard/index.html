@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atlas Communication Dashboard</title>
+    <link rel="stylesheet" href="/dashboard/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Atlas Communication Dashboard</h1>
+        <div class="refresh-control">
+            <button id="refresh-btn">Refresh Data</button>
+            <label for="auto-refresh">
+                <input type="checkbox" id="auto-refresh" checked>
+                Auto-refresh (30s) 
+            </label>
+        </div>
+    </header>
+    
+    <main>
+        <section class="dashboard-section">
+            <h2>System Overview</h2>
+            <div class="metrics-container">
+                <div class="metric-card" id="total-communications">
+                    <h3>Total Communications</h3>
+                    <p class="metric-value">0</p>
+                </div>
+                <div class="metric-card" id="active-agents">
+                    <h3>Active Agents</h3>
+                    <p class="metric-value">0</p>
+                </div>
+                <div class="metric-card" id="error-count">
+                    <h3>Errors</h3>
+                    <p class="metric-value">0</p>
+                </div>
+                <div class="metric-card" id="last-update">
+                    <h3>Last Updated</h3>
+                    <p class="metric-value">Never</p>
+                </div>
+            </div>
+        </section>
+        
+        <section class="dashboard-section">
+            <h2>Communication Metrics</h2>
+            <div class="chart-container">
+                <canvas id="log-levels-chart"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="agent-communications-chart"></canvas>
+            </div>
+        </section>
+        
+        <section class="dashboard-section">
+            <h2>Potential Issues</h2>
+            <div class="issues-container" id="issues-list">
+                <p class="no-issues">No issues detected</p>
+            </div>
+        </section>
+        
+        <section class="dashboard-section">
+            <h2>Recent Communications</h2>
+            <div class="communications-container">
+                <table id="communications-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>From</th>
+                            <th>To</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="communications-body">
+                        <tr>
+                            <td colspan="5" class="no-data">No communications data available</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+    
+    <footer>
+        <p>Atlas Communication Dashboard | <span id="current-time"></span></p>
+    </footer>
+    
+    <script src="/dashboard/dashboard.js"></script>
+</body>
+</html>

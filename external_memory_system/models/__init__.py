@@ -1,13 +1,8 @@
+# external_memory_system/models/__init__.py
 """
-Initialization file for models package.
+Language models and related utilities.
 """
 
-from .base import BaseModel
-from .chatgpt import ChatGPTModel
-from .gemini import GeminiModel
+from external_memory_system.models.local_llm import LocalLLM
 
-__all__ = [
-    'BaseModel',
-    'ChatGPTModel',
-    'GeminiModel'
-]
+__all__ = ['LocalLLM']

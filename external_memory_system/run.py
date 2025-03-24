@@ -20,7 +20,7 @@ from external_memory_system.memory import HybridMemory
 from external_memory_system.models import ChatGPTModel, GeminiModel
 from external_memory_system.agents import MemoryAgent
 
-from external_memory_system.memory.pinecone_store import PineconeVectorStore
+from external_memory_system.storage.pinecone_store import PineconeVectorStore
 from external_memory_system.models.ollama_pinecone_integration import PineconeOllamaIntegration
 
 def main():
