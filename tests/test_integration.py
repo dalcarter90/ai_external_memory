@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from external_memory_system.models.local_llm import LocalLLM
 from external_memory_system.memory.vector_store import PineconeVectorStore
-from external_memory_system.agents.accounting_agent import AccountingAgent
+from external_memory_system.agents.bookkeeping_agent import AccountingAgent
 from external_memory_system.models.ollama_pinecone_integration import PineconeOllamaIntegration
 
 def main():
