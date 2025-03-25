@@ -74,23 +74,19 @@ except ImportError as e:
     sys.exit(1)
 
 def test_atlas_initialization():
-    """
-    Test Atlas initialization.
-    
-    This function attempts to initialize the Atlas central coordinator
-    and verify that it's working correctly by checking its system status.
-    
-    Returns:
-        Atlas: An initialized Atlas instance if successful
-        
-    Raises:
-        Exception: If Atlas initialization fails
-    """
+    """Test Atlas initialization."""
     logger.info("Testing Atlas initialization...")
     
     try:
-        # Initialize Atlas
-        atlas = Atlas()
+        # Create mock components
+        from external_memory_system.models.mock_llm import MockLLM
+        from external_memory_system.storage.mock_vector_store import MockVectorStore
+        
+        mock_llm = MockLLM()
+        mock_store = MockVectorStore(namespace="atlas")
+        
+        # Initialize Atlas with mock components
+        atlas = Atlas(llm=mock_llm, vector_store=mock_store)
         logger.info("Atlas initialized successfully")
         
         # Get system status
@@ -103,24 +99,21 @@ def test_atlas_initialization():
         logger.error(f"Traceback: {traceback.format_exc()}")
         raise
 
+
 def test_bookkeeping_agent_initialization():
-    """
-    Test bookkeeping agent initialization.
-    
-    This function attempts to initialize the BookkeepingAgent
-    and verify that it's working correctly.
-    
-    Returns:
-        BookkeepingAgent: An initialized BookkeepingAgent instance if successful
-        
-    Raises:
-        Exception: If BookkeepingAgent initialization fails
-    """
+    """Test bookkeeping agent initialization."""
     logger.info("Testing bookkeeping agent initialization...")
     
     try:
-        # Initialize the bookkeeping agent
-        agent = BookkeepingAgent()
+        # Create mock components
+        from external_memory_system.models.mock_llm import MockLLM
+        from external_memory_system.storage.mock_vector_store import MockVectorStore
+        
+        mock_llm = MockLLM()
+        mock_store = MockVectorStore(namespace="bookkeeping")
+        
+        # Initialize the bookkeeping agent with mock components
+        agent = BookkeepingAgent(llm=mock_llm, vector_store=mock_store)
         logger.info("Bookkeeping agent initialized successfully")
         return agent
     except Exception as e:
@@ -300,25 +293,21 @@ def test_communication_monitoring():
         raise
 
 def test_direct_agent_communication():
-    """
-    Test direct communication with the bookkeeping agent.
-    
-    This function tests the BookkeepingAgent's ability to process
-    tasks directly, without going through Atlas.
-    
-    Returns:
-        dict: Result of direct task execution
-        
-    Raises:
-        Exception: If direct agent communication fails
-    """
+    """Test direct communication with the bookkeeping agent."""
     logger.info("Testing direct agent communication...")
     
     try:
-        # Initialize the bookkeeping agent
-        agent = BookkeepingAgent()
+        # Create mock components
+        from external_memory_system.models.mock_llm import MockLLM
+        from external_memory_system.storage.mock_vector_store import MockVectorStore
         
-        # Create a test task with realistic accounting data
+        mock_llm = MockLLM()
+        mock_store = MockVectorStore(namespace="bookkeeping")
+        
+        # Initialize the bookkeeping agent with mock components
+        agent = BookkeepingAgent(llm=mock_llm, vector_store=mock_store)
+        
+        # Create a test task
         task = {
             "id": "direct_task_001",
             "type": "journal_entry",

@@ -17,27 +17,37 @@ class BookkeepingAgent:
     Handles journal entries, transaction categorization, and chart of accounts management.
     """
     
-    def __init__(self, llm: Optional[LocalLLM] = None, vector_store = None):
+    def __init__(self, llm = None, vector_store = None):
         """
         Initialize the bookkeeping agent.
-    
+        
         Args:
             llm: The language model to use
             vector_store: The vector store for knowledge retrieval
         """
-        self.llm = llm or LocalLLM()
-    
+        if llm is None:
+            try:
+                # First try to import and use MockLLM for testing
+                from external_memory_system.models.mock_llm import MockLLM
+                self.llm = MockLLM()
+            except ImportError:
+                # Fall back to LocalLLM for production
+                from external_memory_system.models.local_llm import LocalLLM
+                self.llm = LocalLLM()
+        else:
+            self.llm = llm
+        
+        # Vector store initialization (your existing code)
         if vector_store is None:
             try:
-                # First try to import and use MockVectorStore for testing
                 from external_memory_system.storage.mock_vector_store import MockVectorStore
                 self.vector_store = MockVectorStore(namespace="bookkeeping")
             except ImportError:
-                # Fall back to PineconeVectorStore for production
                 from external_memory_system.storage.pinecone_store import PineconeVectorStore
                 self.vector_store = PineconeVectorStore(namespace="bookkeeping")
         else:
             self.vector_store = vector_store
+
     
     def process_task(self, task: Dict) -> Dict:
         """
