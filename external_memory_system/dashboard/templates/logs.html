@@ -1,0 +1,49 @@
+<!-- external_memory_system/dashboard/templates/logs.html -->
+{% extends "layout.html" %}
+
+{% block content %}
+<h1 class="mb-4">Agent Logs</h1>
+
+<div class="card">
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Agent</th>
+                    <th>Level</th>
+                    <th>Message</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if logs %}
+                    {% for log in logs %}
+                        <tr>
+                            <td>{{ log.timestamp }}</td>
+                            <td>{{ log.agent_name }}</td>
+                            <td>
+                                {% if log.level == 'INFO' %}
+                                    <span class="badge bg-info">INFO</span>
+                                {% elif log.level == 'WARNING' %}
+                                    <span class="badge bg-warning">WARNING</span>
+                                {% elif log.level == 'ERROR' %}
+                                    <span class="badge bg-danger">ERROR</span>
+                                {% elif log.level == 'DEBUG' %}
+                                    <span class="badge bg-secondary">DEBUG</span>
+                                {% else %}
+                                    <span class="badge bg-primary">{{ log.level }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ log.message }}</td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center">No logs found</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

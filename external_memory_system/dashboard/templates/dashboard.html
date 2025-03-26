@@ -1,0 +1,223 @@
+<!-- external_memory_system/dashboard/templates/dashboard.html -->
+{% extends "layout.html" %}
+
+{% block content %}
+<h1 class="mb-4">Dashboard</h1>
+
+<div class="row">
+    <!-- Stats Cards -->
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="number" id="active-agents">-</div>
+            <div class="label">Active Agents</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="number" id="pending-tasks">-</div>
+            <div class="label">Pending Tasks</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="number" id="completed-tasks">-</div>
+            <div class="label">Completed Tasks</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="number" id="error-tasks">-</div>
+            <div class="label">Error Tasks</div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Charts -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                Agent Activity
+            </div>
+            <div class="card-body">
+                <canvas id="agent-activity-chart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                Task Types
+            </div>
+            <div class="card-body">
+                <canvas id="task-types-chart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Recent Activity -->
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                Recent Activity
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Task ID</th>
+                            <th>Type</th>
+                            <th>Agent</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-activity-table">
+                        <tr>
+                            <td colspan="5" class="text-center">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Charts
+    let agentActivityChart = null;
+    let taskTypesChart = null;
+    
+    // Function to update dashboard data
+    function updateDashboard()  {
+        fetch('/api/dashboard/stats')
+            .then(response => response.json())
+            .then(data => {
+                // Update stats
+                document.getElementById('active-agents').textContent = data.active_agents;
+                document.getElementById('pending-tasks').textContent = data.pending_tasks;
+                document.getElementById('completed-tasks').textContent = data.completed_tasks;
+                document.getElementById('error-tasks').textContent = data.error_tasks;
+                
+                // Update recent activity table
+                const activityTable = document.getElementById('recent-activity-table');
+                activityTable.innerHTML = '';
+                
+                if (data.recent_activity.length === 0) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = '<td colspan="5" class="text-center">No recent activity</td>';
+                    activityTable.appendChild(row);
+                } else {
+                    data.recent_activity.forEach(activity => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${activity.id}</td>
+                            <td>${activity.type}</td>
+                            <td>${activity.agent_name}</td>
+                            <td><span class="status-badge status-${activity.status}">${activity.status}</span></td>
+                            <td>${new Date(activity.created_at).toLocaleString()}</td>
+                        `;
+                        activityTable.appendChild(row);
+                    });
+                }
+            });
+        
+        fetch('/api/dashboard/agent_activity')
+            .then(response => response.json())
+            .then(data => {
+                // Update agent activity chart
+                if (agentActivityChart) {
+                    agentActivityChart.destroy();
+                }
+                
+                const agentLabels = data.agent_tasks.map(item => item.agent);
+                const completedData = data.agent_tasks.map(item => item.completed);
+                const pendingData = data.agent_tasks.map(item => item.pending);
+                const errorData = data.agent_tasks.map(item => item.error);
+                
+                const ctx = document.getElementById('agent-activity-chart').getContext('2d');
+                agentActivityChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: agentLabels,
+                        datasets: [
+                            {
+                                label: 'Completed',
+                                data: completedData,
+                                backgroundColor: '#28a745'
+                            },
+                            {
+                                label: 'Pending',
+                                data: pendingData,
+                                backgroundColor: '#ffc107'
+                            },
+                            {
+                                label: 'Error',
+                                data: errorData,
+                                backgroundColor: '#dc3545'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: {
+                                stacked: true
+                            },
+                            y: {
+                                stacked: true,
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+                
+                // Update task types chart
+                if (taskTypesChart) {
+                    taskTypesChart.destroy();
+                }
+                
+                const typeLabels = data.task_types.map(item => item.type);
+                const typeCounts = data.task_types.map(item => item.count);
+                
+                const typeCtx = document.getElementById('task-types-chart').getContext('2d');
+                taskTypesChart = new Chart(typeCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: typeLabels,
+                        datasets: [
+                            {
+                                data: typeCounts,
+                                backgroundColor: [
+                                    '#007bff',
+                                    '#28a745',
+                                    '#ffc107',
+                                    '#dc3545',
+                                    '#6610f2',
+                                    '#fd7e14',
+                                    '#20c997',
+                                    '#e83e8c'
+                                ]
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true
+                    }
+                });
+            });
+    }
+    
+    // Update dashboard on load
+    document.addEventListener('DOMContentLoaded', () => {
+        updateDashboard();
+        
+        // Update every 30 seconds
+        setInterval(updateDashboard, 30000);
+    });
+</script>
+{% endblock %}

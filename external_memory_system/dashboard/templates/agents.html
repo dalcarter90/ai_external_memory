@@ -1,0 +1,41 @@
+<!-- external_memory_system/dashboard/templates/agents.html -->
+{% extends "layout.html" %}
+
+{% block content %}
+<h1 class="mb-4">Agents</h1>
+
+<div class="card">
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Last Active</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if agents %}
+                    {% for agent in agents %}
+                        <tr>
+                            <td>{{ agent.id }}</td>
+                            <td>{{ agent.name }}</td>
+                            <td>{{ agent.type }}</td>
+                            <td><span class="status-badge status-{{ agent.status }}">{{ agent.status }}</span></td>
+                            <td>{{ agent.last_active }}</td>
+                            <td>{{ agent.created_at }}</td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center">No agents registered</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

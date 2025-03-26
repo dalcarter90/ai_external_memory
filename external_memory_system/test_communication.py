@@ -18,6 +18,8 @@ logger = logging.getLogger("test_communication")
 from external_memory_system.memory import HybridMemory
 from external_memory_system.models import ChatGPTModel, GeminiModel
 from external_memory_system.agents import MemoryAgent
+from external_memory_system.agents import ReconciliationAgent
+
 
 def setup_test_environment():
     """Set up the test environment with models and memory."""
@@ -225,6 +227,116 @@ def run_tests():
         # Stop the agent
         agent.stop()
         logger.info("Agent stopped")
+        
+# Add a setup method for the reconciliation agent
+def setup_reconciliation_agent(self):
+    """Set up a reconciliation agent for testing."""
+    self.logger.info("Testing reconciliation agent initialization...")
+    vector_store = MockVectorStore(namespace="reconciliation")
+    llm = MockLLM(model_name="test-model")
+    self.reconciliation_agent = ReconciliationAgent(llm=llm, vector_store=vector_store)
+    self.logger.info("Reconciliation agent initialized successfully")
+
+# Add a test method for the reconciliation agent
+def test_reconciliation_agent(self):
+    """Test the reconciliation agent functionality."""
+    self.logger.info("Testing reconciliation agent...")
+    
+    # Create a test task
+    task = {
+        "id": "task_004",
+        "type": "reconcile_transaction",
+        "data": {
+            "journal_entry": {
+                "date": "2025-03-24",
+                "description": "Purchase from Hardware Store Inc by Employee1",
+                "debit_account": "Office Supplies Expense",
+                "credit_account": "Company Credit Card",
+                "amount": 45.67,
+                "reference": "Receipt-2025-03-24-Employee1"
+            }
+        }
+    }
+    
+    # Process the task
+    result = self.reconciliation_agent.process_task(task)
+    
+    # Log the result
+    self.logger.info(f"Reconciliation result: {result}")
+    
+    # Verify the result
+    assert result["status"] == "success"
+    assert result["reconciliation_status"] == "reconciled"
+    
+    self.logger.info("Reconciliation agent test passed")
+    return True
+
+# Update the Atlas coordinator to register the reconciliation agent
+def setup_atlas(self):
+    """Set up Atlas for testing."""
+    self.logger.info("Testing Atlas initialization...")
+    vector_store = MockVectorStore(namespace="atlas")
+    llm = MockLLM(model_name="test-model")
+    self.atlas = Atlas(llm=llm, vector_store=vector_store)
+    # Register test agents
+    self.atlas.register_agent("bookkeeping", "bookkeeping")
+    self.atlas.register_agent("reconciliation", "reconciliation")
+    self.logger.info("Atlas initialized successfully")
+
+# Add a test for Atlas to route tasks to the reconciliation agent
+def test_atlas_reconciliation_routing(self):
+    """Test Atlas routing tasks to the reconciliation agent."""
+    self.logger.info("Testing Atlas routing to reconciliation agent...")
+    
+    # Create a test task
+    task = {
+        "id": "task_005",
+        "type": "reconcile_transaction",
+        "data": {
+            "journal_entry": {
+                "date": "2025-03-24",
+                "description": "Purchase from Hardware Store Inc by Employee1",
+                "debit_account": "Office Supplies Expense",
+                "credit_account": "Company Credit Card",
+                "amount": 45.67,
+                "reference": "Receipt-2025-03-24-Employee1"
+            }
+        }
+    }
+    
+    # Get the agent for this task
+    agent_id = self.atlas.route_task(task)
+    
+    # Log the result
+    self.logger.info(f"Task routed to: {agent_id}")
+    
+    # Verify the result
+    assert agent_id == "reconciliation"
+    
+    self.logger.info("Atlas reconciliation routing test passed")
+    return True
+
+# Update the main test execution to include the new tests
+def run_tests(self):
+    """Run all tests."""
+    test_results = {}
+    
+    # Run existing tests
+    test_results["atlas_initialization"] = self.test_atlas_initialization()
+    test_results["bookkeeping_agent_initialization"] = self.test_bookkeeping_agent()
+    test_results["task_routing"] = self.test_task_routing()
+    test_results["task_execution"] = self.test_task_execution()
+    test_results["direct_agent_communication"] = self.test_direct_agent_communication()
+    
+    # Run new tests
+    test_results["reconciliation_agent_initialization"] = self.setup_reconciliation_agent()
+    test_results["reconciliation_agent_functionality"] = self.test_reconciliation_agent()
+    test_results["atlas_reconciliation_routing"] = self.test_atlas_reconciliation_routing()
+    
+    # Run communication monitoring test
+    test_results["communication_monitoring"] = self.test_communication_monitoring()
+    
+    return test_results
 
 if __name__ == "__main__":
     run_tests()
